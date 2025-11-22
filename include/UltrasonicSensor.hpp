@@ -26,6 +26,7 @@ class UltrasonicSensor {
     unsigned long t_trigger_start_ = 0;
     unsigned long t_echo_start_ = 0;
     unsigned long t_echo_end_ = 0;
+    unsigned long t_wait_start_ = 0;
 
     float computed_distance_ = -1.0f;
 

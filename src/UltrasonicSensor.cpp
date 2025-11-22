@@ -11,7 +11,10 @@ void UltrasonicSensor::begin() {
 
 void UltrasonicSensor::update() {
     const unsigned long now = micros();
-    constexpr unsigned long MEASURE_INTERVAL_US = 60000;
+
+    constexpr unsigned long MEASURE_INTERVAL_US = 60000; // 60 ms
+    constexpr unsigned long ECHO_HIGH_TIMEOUT = 30000;   // 30 ms
+    constexpr unsigned long ECHO_LOW_TIMEOUT = 30000;    // 30 ms
 
     switch(state_) {
 
@@ -26,6 +29,7 @@ void UltrasonicSensor::update() {
     case State::TriggerPulseHigh:
         if(now - t_trigger_start_ >= 10) {
             digitalWrite(trigPin_, LOW);
+            t_wait_start_ = now;
             state_ = State::WaitingForEchoHigh;
         }
         break;
@@ -33,7 +37,13 @@ void UltrasonicSensor::update() {
     case State::WaitingForEchoHigh:
         if(digitalRead(echoPin_) == HIGH) {
             t_echo_start_ = now;
+            t_wait_start_ = now;
             state_ = State::MeasuringEcho;
+        } else if(now - t_wait_start_ >= ECHO_HIGH_TIMEOUT) {
+            // echo never went HIGH → measurement failed
+            computed_distance_ = -1.0f;
+            t_last_measure_ = now;
+            state_ = State::Ready;
         }
         break;
 
@@ -45,12 +55,18 @@ void UltrasonicSensor::update() {
             constexpr float SPEED = 0.0343f; // speed of sound in cm per micro-second
             float d = duration * SPEED * 0.5f;
 
-            if(d < 2.0f || d > 400.0f) {
+            // sensor works from 2 to 400cm
+            // https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf
+            if(d < 2.0f || d > 400.0f)
                 computed_distance_ = -1.0f;
-            } else {
+            else
                 computed_distance_ = d;
-            }
 
+            t_last_measure_ = now;
+            state_ = State::Ready;
+        } else if(now - t_wait_start_ >= ECHO_LOW_TIMEOUT) {
+            // echo did not return to LOW → measurement failed
+            computed_distance_ = -1.0f;
             t_last_measure_ = now;
             state_ = State::Ready;
         }
@@ -64,13 +80,10 @@ void UltrasonicSensor::update() {
 std::optional<float> UltrasonicSensor::readDistance() {
     if(state_ == State::Ready) {
         state_ = State::Idle;
-
-        if(computed_distance_ < 0) {
+        if(computed_distance_ < 0)
             return std::nullopt;
-        }
         return computed_distance_;
     }
-
     return std::nullopt;
 }
 
