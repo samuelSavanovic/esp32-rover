@@ -1,0 +1,15 @@
+BasedOnStyle: LLVM
+
+# === Function / Call spacing ===
+SpaceBeforeParens: Never
+
+# === Braces ===
+BreakBeforeBraces: Attach
+
+# === Indentation ===
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+# === Line length ===
+ColumnLimit: 120

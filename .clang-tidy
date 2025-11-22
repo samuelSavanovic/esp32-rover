@@ -1,0 +1,3 @@
+Checks: 'modernize-*,bugprone-*,performance-*,readability-*'
+WarningsAsErrors: '*'
+HeaderFilterRegex: 'src/|include/'
