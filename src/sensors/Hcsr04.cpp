@@ -1,20 +1,16 @@
-#include "UltrasonicSensor.hpp"
+#include "sensors/Hcsr04.hpp"
 
-UltrasonicSensor::UltrasonicSensor(int trigPin, int echoPin) : trigPin_(trigPin), echoPin_(echoPin) {}
+Hcsr04::Hcsr04(int trigPin, int echoPin) : trigPin_(trigPin), echoPin_(echoPin) {}
 
-void UltrasonicSensor::begin() {
+void Hcsr04::begin() {
     pinMode(trigPin_, OUTPUT);
     pinMode(echoPin_, INPUT_PULLDOWN);
     digitalWrite(trigPin_, LOW);
     delay(50);
 }
 
-void UltrasonicSensor::update() {
+void Hcsr04::update() {
     const unsigned long now = micros();
-
-    constexpr unsigned long MEASURE_INTERVAL_US = 60000; // 60 ms
-    constexpr unsigned long ECHO_HIGH_TIMEOUT = 30000;   // 30 ms
-    constexpr unsigned long ECHO_LOW_TIMEOUT = 30000;    // 30 ms
 
     switch(state_) {
 
@@ -39,7 +35,7 @@ void UltrasonicSensor::update() {
             t_echo_start_ = now;
             t_wait_start_ = now;
             state_ = State::MeasuringEcho;
-        } else if(now - t_wait_start_ >= ECHO_HIGH_TIMEOUT) {
+        } else if(now - t_wait_start_ >= ECHO_TIMEOUT_US) {
             // echo never went HIGH → measurement failed
             computed_distance_ = -1.0f;
             t_last_measure_ = now;
@@ -52,8 +48,7 @@ void UltrasonicSensor::update() {
             t_echo_end_ = now;
             unsigned long duration = t_echo_end_ - t_echo_start_;
 
-            constexpr float SPEED = 0.0343f; // speed of sound in cm per micro-second
-            float d = duration * SPEED * 0.5f;
+            float d = duration * SPEED_CM_PER_US * 0.5f;
 
             // sensor works from 2 to 400cm
             // https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf
@@ -64,7 +59,7 @@ void UltrasonicSensor::update() {
 
             t_last_measure_ = now;
             state_ = State::Ready;
-        } else if(now - t_wait_start_ >= ECHO_LOW_TIMEOUT) {
+        } else if(now - t_wait_start_ >= ECHO_TIMEOUT_US) {
             // echo did not return to LOW → measurement failed
             computed_distance_ = -1.0f;
             t_last_measure_ = now;
@@ -77,7 +72,7 @@ void UltrasonicSensor::update() {
     }
 }
 
-std::optional<float> UltrasonicSensor::readDistance() {
+std::optional<float> Hcsr04::readDistance() {
     if(state_ == State::Ready) {
         state_ = State::Idle;
         if(computed_distance_ < 0)
@@ -87,7 +82,7 @@ std::optional<float> UltrasonicSensor::readDistance() {
     return std::nullopt;
 }
 
-std::optional<float> UltrasonicSensor::readFiltered() {
+std::optional<float> Hcsr04::readFiltered() {
     auto raw = readDistance();
     if(!raw)
         return std::nullopt;

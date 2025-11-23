@@ -2,17 +2,14 @@
 #include <Arduino.h>
 #include <optional>
 
-class UltrasonicSensor {
+class Hcsr04 {
   public:
-    UltrasonicSensor(int trigPin, int echoPin);
+    Hcsr04(int trigPin, int echoPin);
 
     void begin();
     void update();
 
-    // Returns a single raw reading if ready
     std::optional<float> readDistance();
-
-    // Returns a filtered reading if enough samples are available
     std::optional<float> readFiltered();
 
   private:
@@ -31,6 +28,10 @@ class UltrasonicSensor {
     float computed_distance_ = -1.0f;
 
     static constexpr int FILTER_SIZE = 5;
-    float filterBuffer_[FILTER_SIZE];
+    float filterBuffer_[FILTER_SIZE] = {};
     int filterCount_ = 0;
+
+    static constexpr unsigned MEASURE_INTERVAL_US = 60000;
+    static constexpr unsigned ECHO_TIMEOUT_US = 30000;
+    static constexpr float SPEED_CM_PER_US = 0.0343f; // speed of sound
 };
