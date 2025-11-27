@@ -9,7 +9,7 @@ void Hcsr04::begin() {
     delay(50);
 }
 
-void Hcsr04::update() {
+void Hcsr04::loop() {
     const unsigned long now = micros();
 
     switch(state_) {

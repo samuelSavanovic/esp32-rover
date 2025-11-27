@@ -7,7 +7,7 @@ class Hcsr04 {
     Hcsr04(int trigPin, int echoPin);
 
     void begin();
-    void update();
+    void loop();
 
     std::optional<float> readDistance();
     std::optional<float> readFiltered();

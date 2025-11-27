@@ -1,17 +1,21 @@
 #include <Arduino.h>
 
 #include "connectivity/MqttClient.hpp"
+#include "connectivity/Protocol.hpp"
 #include "connectivity/WifiManager.hpp"
+#include "connectivity/WsClient.hpp"
 #include "motors/MotorDriver.hpp"
 #include "secrets.hpp"
 #include "sensors/Hcsr04.hpp"
 
-static constexpr const char *MQTT_HOST = "192.168.178.33";
+static constexpr const char *SERVER_HOST = "192.168.178.33";
 static constexpr int MQTT_PORT = 1883;
+static constexpr int WS_PORT = 9000;
 
 Hcsr04 sensor(D2, D3);
 WifiManager wifi;
-MqttClient mqtt(MQTT_HOST, MQTT_PORT);
+MqttClient mqtt(SERVER_HOST, MQTT_PORT);
+WsClient ws(SERVER_HOST, WS_PORT, "/ws");
 
 // Motor A on D9/D10 (ENA jumper installed)
 MotorDriver motorA(D9, D10);
@@ -30,6 +34,7 @@ void setup() {
 
     wifi.begin(WIFI_SSID, WIFI_PASS);
     mqtt.begin();
+    ws.begin();
 
     Serial.println("System ready.");
 }
@@ -37,7 +42,8 @@ void setup() {
 void loop() {
     wifi.loop();
     mqtt.loop();
-    sensor.update();
+    sensor.loop();
+    ws.loop();
 
     static unsigned long lastSend = 0;
     if(millis() - lastSend >= 50) {
@@ -51,6 +57,9 @@ void loop() {
             Serial.print("Distance: ");
             Serial.print(*dist);
             Serial.println(" cm");
+
+            Telemetry t{TYPE_TELEMETRY, uint32_t(*dist * 10)};
+            ws.sendTelemetry(t);
         }
     }
 
