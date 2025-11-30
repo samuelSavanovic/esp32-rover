@@ -51,4 +51,10 @@ void WsClient::handleCommand(const uint8_t *data, size_t len) {
     int16_t right = cmd.right_pwm;
 
     Serial.printf("CMD L=%d R=%d\n", left, right);
+
+    lastCommand_ = cmd;
 }
+
+std::optional<Command> WsClient::getLastCommand() { return lastCommand_; }
+
+void WsClient::clearCommand() { lastCommand_.reset(); }

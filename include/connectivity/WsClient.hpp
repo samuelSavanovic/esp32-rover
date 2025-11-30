@@ -9,6 +9,8 @@ class WsClient {
     void begin();
     void loop();
     void sendTelemetry(const Telemetry &t);
+    std::optional<Command> getLastCommand();
+    void clearCommand();
 
   private:
     void onWsEvent(WStype_t type, uint8_t *payload, size_t len);
@@ -19,4 +21,5 @@ class WsClient {
     const char *host_;
     uint16_t port_;
     const char *path_;
+    std::optional<Command> lastCommand_;
 };

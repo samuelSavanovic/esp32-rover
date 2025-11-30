@@ -17,10 +17,9 @@ WifiManager wifi;
 MqttClient mqtt(SERVER_HOST, MQTT_PORT);
 WsClient ws(SERVER_HOST, WS_PORT, "/ws");
 
-// Motor A on D9/D10 (ENA jumper installed)
-MotorDriver motorA(D9, D10);
-
+MotorDriver motorA(D9, D10, D11);
 void setup() {
+
     Serial.begin(115200);
     delay(200);
 #ifdef DEBUG_SERIAL_WAIT
@@ -63,31 +62,9 @@ void loop() {
         }
     }
 
-    static unsigned long lastMove = 0;
-    static int phase = 0;
-
-    if(millis() - lastMove > 2000) {
-        lastMove = millis();
-
-        switch(phase) {
-        case 0:
-            Serial.println("Forward");
-            motorA.forward();
-            break;
-        case 1:
-            Serial.println("Stop");
-            motorA.stop();
-            break;
-        case 2:
-            Serial.println("Reverse");
-            motorA.reverse();
-            break;
-        case 3:
-            Serial.println("Stop");
-            motorA.stop();
-            break;
-        }
-
-        phase = (phase + 1) % 4;
+    if(auto cmd = ws.getLastCommand()) {
+        int16_t left = cmd->left_pwm;
+        // int16_t right = cmd->right_pwm;
+        motorA.setSpeed(left);
     }
 }

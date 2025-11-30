@@ -38,3 +38,21 @@ void MotorDriver::stop() {
     digitalWrite(in1_, LOW);
     digitalWrite(in2_, LOW);
 }
+
+void MotorDriver::setSpeed(int16_t pwm) {
+    if(pwm == 0) {
+        stop();
+        return;
+    }
+    int speed = abs(pwm);
+    if(speed > 255)
+        speed = 255;
+
+    uint8_t duty = static_cast<uint8_t>(abs(pwm));
+
+    if(pwm > 0) {
+        forward(duty);
+    } else {
+        reverse(duty);
+    }
+}
