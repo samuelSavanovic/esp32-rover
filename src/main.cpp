@@ -14,10 +14,11 @@ static constexpr int WS_PORT = 9000;
 
 Hcsr04 sensor(D2, D3);
 WifiManager wifi;
-MqttClient mqtt(SERVER_HOST, MQTT_PORT);
+// MqttClient mqtt(SERVER_HOST, MQTT_PORT);
 WsClient ws(SERVER_HOST, WS_PORT, "/ws");
 
-MotorDriver motorA(D9, D10, D11);
+MotorDriver motorA(D4, D5, D6);
+MotorDriver motorB(D9, D10, D11);
 void setup() {
 
     Serial.begin(115200);
@@ -30,9 +31,10 @@ void setup() {
 
     sensor.begin();
     motorA.begin();
+    motorB.begin();
 
     wifi.begin(WIFI_SSID, WIFI_PASS);
-    mqtt.begin();
+    // mqtt.begin();
     ws.begin();
 
     Serial.println("System ready.");
@@ -40,7 +42,7 @@ void setup() {
 
 void loop() {
     wifi.loop();
-    mqtt.loop();
+    // mqtt.loop();
     sensor.loop();
     ws.loop();
 
@@ -51,11 +53,11 @@ void loop() {
         if(auto dist = sensor.readFiltered()) {
             char payload[32];
             snprintf(payload, sizeof(payload), "%.2f", *dist);
-            mqtt.publish("esp32/distance", payload);
+            // mqtt.publish("esp32/distance", payload);
 
-            Serial.print("Distance: ");
-            Serial.print(*dist);
-            Serial.println(" cm");
+            // Serial.print("Distance: ");
+            // Serial.print(*dist);
+            // Serial.println(" cm");
 
             Telemetry t{TYPE_TELEMETRY, uint32_t(*dist * 10)};
             ws.sendTelemetry(t);
@@ -64,7 +66,8 @@ void loop() {
 
     if(auto cmd = ws.getLastCommand()) {
         int16_t left = cmd->left_pwm;
-        // int16_t right = cmd->right_pwm;
+        int16_t right = cmd->right_pwm;
         motorA.setSpeed(left);
+        motorB.setSpeed(right);
     }
 }
